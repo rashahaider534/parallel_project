@@ -15,7 +15,7 @@ use Illuminate\Foundation\Bus\Dispatchable;
 class ProcessAddToCart implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
-//
+///
     public $tries = 3;
     public $userId;
     public $productId;
