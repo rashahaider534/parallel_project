@@ -82,7 +82,7 @@ class CartController extends Controller
     public function storeafter(Request $request)
     {
         $user = Auth::user();
-
+///
         ProcessAddToCart::dispatch(
             $user->id,
             $request->id,
