@@ -3,6 +3,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Jobs\ProcessAddToCart;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use App\Models\Cart;
@@ -39,44 +40,58 @@ class CartController extends Controller
 
         return response()->json(['message' =>'add product to cart'], 200);
     }
+//    public function storeafter(Request $request)
+//    {
+//        return DB::transaction(function () use ($request) {
+//            $user = Auth::user();
+//            $product = Product::where('id', $request->id)
+//                ->lockForUpdate()
+//                ->first();
+//
+//            if (!$product) {
+//                return response()->json(['error' => 'Product Notfound']);
+//            }
+//
+//            $requestedQuantity = (int)$request->input('quantity');
+//
+//            if ($product->quantity < $requestedQuantity) {
+//                return response()->json(['error' => 'Quantity is not available'], 422);
+//            }
+//
+//            $product->quantity = $product->quantity - $requestedQuantity;
+//            $product->save();
+//
+//            $cartItem = Cart::where('user_id', $user->id)
+//                ->where('product_id', $request->id)
+//                ->first();
+//
+//            if ($cartItem) {
+//                $cartItem->quantity = $cartItem->quantity + $requestedQuantity;
+//                $cartItem->save();
+//            } else {
+//                Cart::create([
+//                    'user_id' => $user->id,
+//                    'product_id' => $request->id,
+//                    'quantity' => $requestedQuantity,
+//                ]);
+//            }
+//
+//            return response()->json(['message' => 'تم الاضافة الى السلة'], 200);
+//        });
+//    }
     public function storeafter(Request $request)
     {
-        return DB::transaction(function () use ($request) {
-            $user = Auth::user();
-            $product = Product::where('id', $request->id)
-                ->lockForUpdate()
-                ->first();
+        $user = Auth::user();
 
-            if (!$product) {
-                return response()->json(['error' => 'Product Notfound']);
-            }
+        ProcessAddToCart::dispatch(
+            $user->id,
+            $request->id,
+            $request->input('quantity')
+        );
 
-            $requestedQuantity = (int)$request->input('quantity');
-
-            if ($product->quantity < $requestedQuantity) {
-                return response()->json(['error' => 'Quantity is not available'], 422);
-            }
-
-            $product->quantity = $product->quantity - $requestedQuantity;
-            $product->save();
-
-            $cartItem = Cart::where('user_id', $user->id)
-                ->where('product_id', $request->id)
-                ->first();
-
-            if ($cartItem) {
-                $cartItem->quantity = $cartItem->quantity + $requestedQuantity;
-                $cartItem->save();
-            } else {
-                Cart::create([
-                    'user_id' => $user->id,
-                    'product_id' => $request->id,
-                    'quantity' => $requestedQuantity,
-                ]);
-            }
-
-            return response()->json(['message' => 'تم الاضافة الى السلة'], 200);
-        });
+        return response()->json([
+            'message' => 'تم إرسال الطلب للمعالجة'
+        ]);
     }
 
     public function storeOptimistic(Request $request)
