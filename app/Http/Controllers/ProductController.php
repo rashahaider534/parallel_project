@@ -14,17 +14,9 @@ class ProductController extends Controller
     public function getproducts($shop_id = null)
     {
         if ($shop_id == null) {
-<<<<<<< HEAD
-            // $resulte=DB::table('products')->get();
             $resulte = Product::paginate(6);
             return response()->json(['products' => $resulte], 200);
         } else {
-            // $resulte=DB::table('products')->where('shop_id',$shop_id)->get();
-=======
-            $resulte = Product::paginate(6);
-            return response()->json(['products' => $resulte], 200);
-        } else {
->>>>>>> 99d83b9cc9e8ab0b761d00cd27ba7ec737820cfa
             $resulte = Product::where('shop_id', $shop_id)->paginate(6);
             return response()->json(['products' => $resulte], 200);
         }
@@ -76,9 +68,6 @@ class ProductController extends Controller
             'data' => $product
         ], 200);
     }
-<<<<<<< HEAD
-}
-=======
 
     public function simulateLoadBalancer(Request $request)
     {
@@ -114,4 +103,3 @@ class ProductController extends Controller
         ], 200);
     }
 }
->>>>>>> 99d83b9cc9e8ab0b761d00cd27ba7ec737820cfa

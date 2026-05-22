@@ -40,48 +40,6 @@ class CartController extends Controller
 
         return response()->json(['message' =>'add product to cart'], 200);
     }
-<<<<<<< HEAD
-    public function storeafter(Request $request)
-    {
-        return DB::transaction(function () use ($request) {
-            $user = Auth::user();
-            $product = Product::where('id', $request->id)
-                ->lockForUpdate()
-                ->first();
-
-            if (!$product) {
-                return response()->json(['error' => 'Product Notfound']);
-            }
-
-            $requestedQuantity = (int)$request->input('quantity');
-
-            if ($product->quantity < $requestedQuantity) {
-                return response()->json(['error' => 'Quantity is not available'], 422);
-            }
-
-            $product->quantity = $product->quantity - $requestedQuantity;
-            $product->save();
-
-            $cartItem = Cart::where('user_id', $user->id)
-                ->where('product_id', $request->id)
-                ->first();
-
-            if ($cartItem) {
-                $cartItem->quantity = $cartItem->quantity + $requestedQuantity;
-                $cartItem->save();
-            } else {
-                Cart::create([
-                    'user_id' => $user->id,
-                    'product_id' => $request->id,
-                    'quantity' => $requestedQuantity,
-                ]);
-            }
-
-            return response()->json(['message' => 'تم الاضافة الى السلة'], 200);
-        });
-    }
-
-=======
 //    public function storeafter(Request $request)
 //    {
 //        return DB::transaction(function () use ($request) {
@@ -148,7 +106,6 @@ class CartController extends Controller
     return $this->storebefore($request);
 }
 
->>>>>>> 99d83b9cc9e8ab0b761d00cd27ba7ec737820cfa
     public function storeOptimistic(Request $request)
     {
         $maxRetries = 3;
@@ -182,11 +139,6 @@ class CartController extends Controller
                         throw new \Exception('تعارض في البيانات، إعادة محاولة');
                     }
 
-<<<<<<< HEAD
-                    // إضافة إلى السلة
-=======
-
->>>>>>> 99d83b9cc9e8ab0b761d00cd27ba7ec737820cfa
                     $cartItem = Cart::where('user_id', $user->id)
                         ->where('product_id', $request->id)->first();
 
@@ -205,12 +157,7 @@ class CartController extends Controller
             } catch (\Exception $e) {
                 if ($attempt >= $maxRetries - 1) {
                     return response()->json(['error' => 'فشلت العملية بسبب ازدحام، حاول مرة أخرى']);
-                }
-<<<<<<< HEAD
-=======
-                //test
->>>>>>> 99d83b9cc9e8ab0b761d00cd27ba7ec737820cfa
-            }
+                }            }
         }
     }
 }
