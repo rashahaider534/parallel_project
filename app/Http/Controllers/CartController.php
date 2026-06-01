@@ -85,10 +85,10 @@ class CartController extends Controller
 
 
     if ($request->has('use_queue') && $request->use_queue == 1) {
-         
+
         \App\Jobs\ProcessAddToCart::dispatch(
-            $user->id, 
-            $request->id, 
+            $user->id,
+            $request->id,
             $request->quantity
         );
 
@@ -99,10 +99,10 @@ class CartController extends Controller
             ], 202);
     }
 
-   
-    sleep(5); 
-    
-    
+
+    sleep(5);
+
+
     return $this->storebefore($request);
 }
 
@@ -139,7 +139,6 @@ class CartController extends Controller
                         throw new \Exception('تعارض في البيانات، إعادة محاولة');
                     }
 
-             
                     $cartItem = Cart::where('user_id', $user->id)
                         ->where('product_id', $request->id)->first();
 
@@ -158,9 +157,7 @@ class CartController extends Controller
             } catch (\Exception $e) {
                 if ($attempt >= $maxRetries - 1) {
                     return response()->json(['error' => 'فشلت العملية بسبب ازدحام، حاول مرة أخرى']);
-                }
-                //test
-            }
+                }            }
         }
     }
 }

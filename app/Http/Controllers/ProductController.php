@@ -74,10 +74,10 @@ class ProductController extends Controller
         $servers = ['Server_A', 'Server_B', 'Server_C'];
 
         if ($request->has('use_lb') && $request->use_lb == 0) {
-            
+
             $selectedServer = $servers[0];
-            
-            usleep(500000); 
+
+            usleep(500000);
 
             return response()->json([
                 'status' => 'BEFORE (No Load Balancer)',
@@ -93,7 +93,7 @@ class ProductController extends Controller
         $nextIndex = ($currentIndex + 1) % count($servers);
         Cache::put('rr_index', $nextIndex, 60);
 
-        
+
         return response()->json([
             'status' => 'AFTER (Load Balancer Active)',
             'algorithm' => 'Round Robin (Sequential Distribution)',

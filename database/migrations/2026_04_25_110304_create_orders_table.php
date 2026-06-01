@@ -15,9 +15,6 @@ return new class extends Migration
              $table->id();
             $table->string('name');
             $table->string('email');
-            $table->text('address');
-            $table->string('phone');
-            $table->text('note')->nullable();
             $table->unsignedBigInteger('user_id');
             $table->float('total_price');
             $table->timestamps();
