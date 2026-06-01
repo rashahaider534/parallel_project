@@ -7,7 +7,7 @@ use App\Http\Controllers\CartController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ShopController;
 use App\Http\Controllers\ReportController;
-
+use App\Http\Controllers\OrderController;
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
 Route::get('/simulate-lb', [ProductController::class, 'simulateLoadBalancer']);
@@ -31,4 +31,5 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/storebefore', [CartController::class, 'storebefore']);
     Route::post('/storeafter', [CartController::class, 'storeafter']);
     Route::post('/storeOptimistic', [CartController::class, 'storeOptimistic']);
+    Route::post('/store_order_before', [OrderController::class, 'store_order_before']);
 });
