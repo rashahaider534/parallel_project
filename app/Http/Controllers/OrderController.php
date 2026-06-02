@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use App\Models\Cart;
 use App\Models\Order;
 use App\Models\OrderDetail;
@@ -34,6 +35,7 @@ class OrderController extends Controller
                 'price'=>$item->product->price
             ]);
             Product::where('id',$item->product_id)->increment('order_counter',$item->quantity);
+            Cache::forget('top_products');
         }
 
         Cart::where('user_id', $user->id)->delete();
