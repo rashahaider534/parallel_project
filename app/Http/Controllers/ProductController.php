@@ -8,7 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Cache;
-
+use Illuminate\Support\Facades\Log;
 class ProductController extends Controller
 {
     public function getproducts($shop_id = null)
@@ -102,4 +102,20 @@ class ProductController extends Controller
             'message' => 'Requests distributed sequentially using Round Robin.'
         ], 200);
     }
+
+    public function topProducts()
+{
+    $products = Cache::store('redis')->remember(
+        'top_products',
+        300,
+        function () {
+             Log::info('DATABASE QUERY EXECUTED');
+            return Product::orderByDesc('order_counter')
+                ->take(3)
+                ->get()
+                 ->toArray();
+        }
+    );
+    return response()->json(['products' => $products], 200);
+}
 }
