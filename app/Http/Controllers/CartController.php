@@ -9,7 +9,8 @@ use Illuminate\Support\Facades\Auth;
 use App\Models\Cart;
 use App\Models\Product;
 use Illuminate\Http\Request;
-
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
 class CartController extends Controller
 {
     public function storebefore(Request $request)
@@ -37,74 +38,65 @@ class CartController extends Controller
                 'quantity' => $requestedQuantity,
             ]);
         }
-
-        return response()->json(['message' =>'add product to cart'], 200);
+        return response()->json(['message' => 'add product to cart'], 200);
     }
-//    public function storeafter(Request $request)
-//    {
-//        return DB::transaction(function () use ($request) {
-//            $user = Auth::user();
-//            $product = Product::where('id', $request->id)
-//                ->lockForUpdate()
-//                ->first();
-//
-//            if (!$product) {
-//                return response()->json(['error' => 'Product Notfound']);
-//            }
-//
-//            $requestedQuantity = (int)$request->input('quantity');
-//
-//            if ($product->quantity < $requestedQuantity) {
-//                return response()->json(['error' => 'Quantity is not available'], 422);
-//            }
-//
-//            $product->quantity = $product->quantity - $requestedQuantity;
-//            $product->save();
-//
-//            $cartItem = Cart::where('user_id', $user->id)
-//                ->where('product_id', $request->id)
-//                ->first();
-//
-//            if ($cartItem) {
-//                $cartItem->quantity = $cartItem->quantity + $requestedQuantity;
-//                $cartItem->save();
-//            } else {
-//                Cart::create([
-//                    'user_id' => $user->id,
-//                    'product_id' => $request->id,
-//                    'quantity' => $requestedQuantity,
-//                ]);
-//            }
-//
-//            return response()->json(['message' => 'تم الاضافة الى السلة'], 200);
-//        });
-//    }
-   public function storeafter(Request $request)
-{
-    $user = auth()->user();
+       public function storeafter(Request $request)
+       {
+           return DB::transaction(function () use ($request) {
+               $user = Auth::user();
+               $product = Product::where('id', $request->id)
+                   ->lockForUpdate()
+                   ->first();
+               if (!$product) {
+                   return response()->json(['error' => 'Product Notfound']);
+               }
+               $requestedQuantity = (int)$request->input('quantity');
+               if ($product->quantity < $requestedQuantity) {
+                   return response()->json(['error' => 'Quantity is not available'], 422);
+               }
+               $product->quantity = $product->quantity - $requestedQuantity;
+               $product->save();
+               $cartItem = Cart::where('user_id', $user->id)
+                   ->where('product_id', $request->id)
+                   ->first();
+               if ($cartItem) {
+                   $cartItem->quantity = $cartItem->quantity + $requestedQuantity;
+                   $cartItem->save();
+               } else { Cart::create([
+                       'user_id' => $user->id,
+                       'product_id' => $request->id,
+                       'quantity' => $requestedQuantity,
+                   ]);  }
+               return response()->json(['message' => 'تم الاضافة الى السلة'], 200);
+           });
+       }
+
+    // public function storeafter(Request $request)
+    // {
+    //     $user = auth()->user();
 
 
-    if ($request->has('use_queue') && $request->use_queue == 1) {
+    //     if ($request->has('use_queue') && $request->use_queue == 1) {
 
-        \App\Jobs\ProcessAddToCart::dispatch(
-            $user->id,
-            $request->id,
-            $request->quantity
-        );
+    //         \App\Jobs\ProcessAddToCart::dispatch(
+    //             $user->id,
+    //             $request->id,
+    //             $request->quantity
+    //         );
 
-        return response()->json([
-            'message' => 'تم استلام الطلب وهو  قيد المعالجة    ',
-            'type' => 'Asynchronous (Fast)'
+    //         return response()->json([
+    //             'message' => 'تم استلام الطلب وهو  قيد المعالجة    ',
+    //             'type' => 'Asynchronous (Fast)'
 
-            ], 202);
-    }
-
-
-    sleep(5);
+    //         ], 202);
+    //     }
 
 
-    return $this->storebefore($request);
-}
+    //     sleep(5);
+
+
+    //     return $this->storebefore($request);
+    // }
 
     public function storeOptimistic(Request $request)
     {
@@ -123,7 +115,7 @@ class CartController extends Controller
                     $requestedQuantity = $request->input('quantity');
 
                     if ($product->quantity < $requestedQuantity) {
-                        return response()->json(['error' =>'Quantity is not available'], 422);
+                        return response()->json(['error' => 'Quantity is not available'], 422);
                     }
 
                     $oldVersion = $product->version;
@@ -157,7 +149,62 @@ class CartController extends Controller
             } catch (\Exception $e) {
                 if ($attempt >= $maxRetries - 1) {
                     return response()->json(['error' => 'فشلت العملية بسبب ازدحام، حاول مرة أخرى']);
-                }            }
+                }
+            }
         }
+    }
+    public function storeDistributed(Request $request)
+    {
+         Log::info("TRYING LOCK " . now());
+        return Cache::lock(
+            'product_' . $request->id,
+            30
+        )->block(5, function () use ($request) {
+
+            return DB::transaction(function () use ($request) {
+
+                Log::info("LOCK ACQUIRED". now());
+                sleep(10);
+                $user = Auth::user();
+
+                $product = Product::find($request->id);
+
+                if (!$product) {
+                    return response()->json([
+                        'error' => 'Product Not Found'
+                    ]);
+                }
+
+                $requestedQuantity = (int)$request->quantity;
+
+                if ($product->quantity < $requestedQuantity) {
+                    return response()->json([
+                        'error' => 'Quantity is not available'
+                    ], 422);
+                }
+
+                $product->quantity -= $requestedQuantity;
+                $product->save();
+
+                $cartItem = Cart::where('user_id', $user->id)
+                    ->where('product_id', $request->id)
+                    ->first();
+
+                if ($cartItem) {
+                    $cartItem->quantity += $requestedQuantity;
+                    $cartItem->save();
+                } else {
+                    Cart::create([
+                        'user_id' => $user->id,
+                        'product_id' => $request->id,
+                        'quantity' => $requestedQuantity,
+                    ]);
+                }
+
+                return response()->json([
+                    'message' => 'Added successfully'
+                ]);
+            });
+        });
     }
 }

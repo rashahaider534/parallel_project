@@ -12,6 +12,7 @@ Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
 Route::get('/simulate-lb', [ProductController::class, 'simulateLoadBalancer']);
 Route::get('/top-products', [ProductController::class, 'topProducts']);
+Route::get('/top-products-before', [ProductController::class, 'topProductsbefor']);
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
@@ -31,5 +32,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/storebefore', [CartController::class, 'storebefore']);
     Route::post('/storeafter', [CartController::class, 'storeafter']);
     Route::post('/storeOptimistic', [CartController::class, 'storeOptimistic']);
+    Route::post('/storeDistributed', [CartController::class, 'storeDistributed']);
     Route::post('/store_order_before', [OrderController::class, 'store_order_before']);
+
 });
