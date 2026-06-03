@@ -118,4 +118,13 @@ class ProductController extends Controller
     );
     return response()->json(['products' => $products], 200);
 }
+ public function topProductsbefor()
+{
+    Log::info('DATABASE QUERY EXECUTED');
+    $products = Product::orderByDesc('order_counter')
+                ->take(3)
+                ->get()
+                ->toArray();
+    return response()->json(['products' => $products], 200);
+}
 }
