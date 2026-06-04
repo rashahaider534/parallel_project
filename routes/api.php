@@ -34,5 +34,5 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/storeOptimistic', [CartController::class, 'storeOptimistic']);
     Route::post('/storeDistributed', [CartController::class, 'storeDistributed']);
     Route::post('/store_order_before', [OrderController::class, 'store_order_before']);
-
+    Route::post('/store_order_after', [OrderController::class, 'store_order_after']);
 });
