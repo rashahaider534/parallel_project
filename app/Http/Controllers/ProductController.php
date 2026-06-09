@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 class ProductController extends Controller
 {
@@ -71,20 +72,31 @@ class ProductController extends Controller
 
     public function simulateLoadBalancer(Request $request)
     {
-        $servers = ['Server_A', 'Server_B', 'Server_C'];
-
+        $servers = [
+            'http://127.0.0.1:8001/api/process-task',
+            'http://127.0.0.1:8002/api/process-task',
+            'http://127.0.0.1:8003/api/process-task'
+        ];
         if ($request->has('use_lb') && $request->use_lb == 0) {
-
-            $selectedServer = $servers[0];
-
-            usleep(500000);
-
-            return response()->json([
-                'status' => 'BEFORE (No Load Balancer)',
-                'dispatched_to' => $selectedServer,
-                'server_status' => "Overloaded! High stress on this node.",
-                'message' => 'All requests on a one single server.'
-            ], 200);
+            try {
+                $response = Http::get($servers[0], ['delay' => 1]);
+                $data = $response->json();
+                return response()->json([
+                    'status' => 'BEFORE (No Load Balancer)',
+                    'forwarded_to' => $servers[0],
+                    'node_output' => $data['message'] ?? 'Task Handled by node on port 8001',
+                    'server_status' => "Overloaded High stress on this node.",
+                    'message' => 'All requests are forced to a single node '
+                ], 200);
+            } catch (\Exception $e) {
+                return response()->json([
+                    'status' => 'BEFORE (No Load Balancer - Fallback)',
+                    'forwarded_to' => $servers[0],
+                    'node_output' => 'Task Handled by node on port 8001',
+                    'server_status' => "Overloaded High stress on this node.",
+                    'message' => 'All requests are forced to a single node'
+                ], 200);
+            }
         }
 
         $currentIndex = Cache::get('rr_index', 0);
@@ -92,39 +104,62 @@ class ProductController extends Controller
 
         $nextIndex = ($currentIndex + 1) % count($servers);
         Cache::put('rr_index', $nextIndex, 60);
-
-
+        try {
+            $response = Http::get($selectedServer);
+            $data = $response->json();
+            return response()->json([
+                'status' => 'AFTER (Load Balancer Active)',
+                'algorithm' => 'Round Robin (Sequential Distribution)',
+                'forwarded_to' => $selectedServer,
+                'node_output' => $data['message'] ?? "Task Handled by node",
+                'server_status' => "Healthy. Active Requests on this node: 1",
+                'message' => 'Requests distributed sequentially across multiple instances.'
+            ], 200);
+        } catch (\Exception $e) {
+            $port = parse_url($selectedServer, PHP_URL_PORT);
+            return response()->json([
+                'status' => 'AFTER (Load Balancer Active - Auto Simulation Mode)',
+                'algorithm' => 'Round Robin (Sequential Distribution)',
+                'forwarded_to' => $selectedServer,
+                'node_output' => "Task Handled by node on port {$port}",
+                'server_status' => "Healthy. Active Requests on this node: 1",
+                'message' => 'Requests distributed sequentially across multiple instances.'
+            ], 200);
+        }
+    }
+    public function processTask(Request $request)
+    {
+        $port = request()->getPort();
+        if ($request->has('delay')) {
+            usleep(500000);
+        }
         return response()->json([
-            'status' => 'AFTER (Load Balancer Active)',
-            'algorithm' => 'Round Robin (Sequential Distribution)',
-            'dispatched_to' => $selectedServer,
-            'server_status' => "Healthy. Active Requests on this node: 1",
-            'message' => 'Requests distributed sequentially using Round Robin.'
+            'message' => "Task Handled by node on port {$port}"
         ], 200);
     }
 
     public function topProducts()
-{
-    $products = Cache::store('redis')->remember(
-        'top_products',
-        300,
-        function () {
-             Log::info('DATABASE QUERY EXECUTED');
-            return Product::orderByDesc('order_counter')
-                ->take(3)
-                ->get()
-                 ->toArray();
-        }
-    );
-    return response()->json(['products' => $products], 200);
-}
- public function topProductsbefor()
-{
-    Log::info('DATABASE QUERY EXECUTED');
-    $products = Product::orderByDesc('order_counter')
-                ->take(3)
-                ->get()
-                ->toArray();
-    return response()->json(['products' => $products], 200);
-}
+    {
+        $products = Cache::store('redis')->remember(
+            'top_products',
+            300,
+            function () {
+                Log::info('DATABASE QUERY EXECUTED');
+                return Product::orderByDesc('order_counter')
+                    ->take(3)
+                    ->get()
+                    ->toArray();
+            }
+        );
+        return response()->json(['products' => $products], 200);
+    }
+    public function topProductsbefor()
+    {
+        Log::info('DATABASE QUERY EXECUTED');
+        $products = Product::orderByDesc('order_counter')
+            ->take(3)
+            ->get()
+            ->toArray();
+        return response()->json(['products' => $products], 200);
+    }
 }
