@@ -178,10 +178,6 @@ class ProductController extends Controller
         $traceId = $request->attributes->get('trace_id');
         $totalStart = hrtime(true);
 
-
-        // ======================
-        // SPAN 1: CACHE / DB FETCH
-        // ======================
         $t1 = hrtime(true);
 
         $products = Cache::store('redis')->remember(
@@ -209,9 +205,6 @@ class ProductController extends Controller
 
         $this->logSpan($traceId, "cache_or_db_fetch", $t1);
 
-        // ======================
-        // SPAN 2: RESPONSE BUILD
-        // ======================
         $t2 = hrtime(true);
 
         $response = response()->json([
@@ -220,9 +213,6 @@ class ProductController extends Controller
 
         $this->logSpan($traceId, "response_build", $t2);
 
-        // ======================
-        // TOTAL
-        // ======================
         $total = (hrtime(true) - $totalStart) / 1e6;
 
 
@@ -233,13 +223,8 @@ class ProductController extends Controller
     {
         $traceId = $request->attributes->get('trace_id');
 
-
-        $spans = [];
         $totalStart = hrtime(true);
 
-        // ======================
-        // SPAN 1: DB QUERY (NO CACHE)
-        // ======================
         $t1 = hrtime(true);
 
         $products = Product::orderByDesc('order_counter')
@@ -249,9 +234,6 @@ class ProductController extends Controller
          sleep(1);
         $this->logSpan($traceId, "db_query", $t1);
 
-        // ======================
-        // SPAN 2: RESPONSE BUILD
-        // ======================
         $t2 = hrtime(true);
 
         $response = response()->json([
@@ -260,9 +242,6 @@ class ProductController extends Controller
 
         $this->logSpan($traceId, "response_build", $t2);
 
-        // ======================
-        // TOTAL
-        // ======================
         $total = (hrtime(true) - $totalStart) / 1e6;
 
         return $response;
