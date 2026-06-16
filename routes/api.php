@@ -11,8 +11,8 @@ use App\Http\Controllers\OrderController;
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
 Route::get('/simulate-lb', [ProductController::class, 'simulateLoadBalancer']);
-Route::get('/top-products', [ProductController::class, 'topProducts']);
-Route::get('/top-products-before', [ProductController::class, 'topProductsbefor']);
+Route::get('/top-products', [ProductController::class, 'topProducts'])->middleware('trace');
+Route::get('/top-products-before', [ProductController::class, 'topProductsBefore'])->middleware('trace');;
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);

@@ -40,63 +40,63 @@ class CartController extends Controller
         }
         return response()->json(['message' => 'add product to cart'], 200);
     }
-       public function storeafter(Request $request)
-       {
-           return DB::transaction(function () use ($request) {
-               $user = Auth::user();
-               $product = Product::where('id', $request->id)
-                   ->lockForUpdate()
-                   ->first();
-               if (!$product) {
-                   return response()->json(['error' => 'Product Notfound']);
-               }
-               $requestedQuantity = (int)$request->input('quantity');
-               if ($product->quantity < $requestedQuantity) {
-                   return response()->json(['error' => 'Quantity is not available'], 422);
-               }
-               $product->quantity = $product->quantity - $requestedQuantity;
-               $product->save();
-               $cartItem = Cart::where('user_id', $user->id)
-                   ->where('product_id', $request->id)
-                   ->first();
-               if ($cartItem) {
-                   $cartItem->quantity = $cartItem->quantity + $requestedQuantity;
-                   $cartItem->save();
-               } else { Cart::create([
-                       'user_id' => $user->id,
-                       'product_id' => $request->id,
-                       'quantity' => $requestedQuantity,
-                   ]);  }
-               return response()->json(['message' => 'تم الاضافة الى السلة'], 200);
-           });
-       }
+//       public function storeafter(Request $request)
+//       {
+//           return DB::transaction(function () use ($request) {
+//               $user = Auth::user();
+//               $product = Product::where('id', $request->id)
+//                   ->lockForUpdate()
+//                   ->first();
+//               if (!$product) {
+//                   return response()->json(['error' => 'Product Notfound']);
+//               }
+//               $requestedQuantity = (int)$request->input('quantity');
+//               if ($product->quantity < $requestedQuantity) {
+//                   return response()->json(['error' => 'Quantity is not available'], 422);
+//               }
+//               $product->quantity = $product->quantity - $requestedQuantity;
+//               $product->save();
+//               $cartItem = Cart::where('user_id', $user->id)
+//                   ->where('product_id', $request->id)
+//                   ->first();
+//               if ($cartItem) {
+//                   $cartItem->quantity = $cartItem->quantity + $requestedQuantity;
+//                   $cartItem->save();
+//               } else { Cart::create([
+//                       'user_id' => $user->id,
+//                       'product_id' => $request->id,
+//                       'quantity' => $requestedQuantity,
+//                   ]);  }
+//               return response()->json(['message' => 'تم الاضافة الى السلة'], 200);
+//           });
+//       }
 
-    // public function storeafter(Request $request)
-    // {
-    //     $user = auth()->user();
-
-
-    //     if ($request->has('use_queue') && $request->use_queue == 1) {
-
-    //         \App\Jobs\ProcessAddToCart::dispatch(
-    //             $user->id,
-    //             $request->id,
-    //             $request->quantity
-    //         );
-
-    //         return response()->json([
-    //             'message' => 'تم استلام الطلب وهو  قيد المعالجة    ',
-    //             'type' => 'Asynchronous (Fast)'
-
-    //         ], 202);
-    //     }
+     public function storeafter(Request $request)
+     {
+         $user = auth()->user();
 
 
-    //     sleep(5);
+         if ($request->has('use_queue') && $request->use_queue == 1) {
+
+             \App\Jobs\ProcessAddToCart::dispatch(
+                 $user->id,
+                 $request->id,
+                 $request->quantity
+             );
+
+             return response()->json([
+                 'message' => 'تم استلام الطلب وهو  قيد المعالجة    ',
+                 'type' => 'Asynchronous (Fast)'
+
+             ], 202);
+         }
 
 
-    //     return $this->storebefore($request);
-    // }
+         sleep(5);
+
+
+         return $this->storebefore($request);
+     }
 
     public function storeOptimistic(Request $request)
     {

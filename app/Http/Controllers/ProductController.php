@@ -138,28 +138,133 @@ class ProductController extends Controller
         ], 200);
     }
 
-    public function topProducts()
+//    public function topProducts()
+//    {
+//        $products = Cache::store('redis')->remember(
+//            'top_products',
+//            300,
+//            function () {
+//                Log::info('DATABASE QUERY EXECUTED');
+//                return Product::orderByDesc('order_counter')
+//                    ->take(3)
+//                    ->get()
+//                    ->toArray();
+//            }
+//        );
+//        return response()->json(['products' => $products], 200);
+//    }
+//    public function topProductsBefore()
+//    {
+//        Log::info('DATABASE QUERY EXECUTED');
+//        $products = Product::orderByDesc('order_counter')
+//            ->take(3)
+//            ->get()
+//            ->toArray();
+//        return response()->json(['products' => $products], 200);
+//    }
+
+    private function logSpan($traceId, $name, $start)
     {
+        $duration = (hrtime(true) - $start) / 1e6;
+
+        Log::info("SPAN", [
+            'trace_id' => $traceId,
+            'span' => $name,
+            'ms' => $duration
+        ]);
+    }
+    public function topProducts(Request $request)
+    {
+        $traceId = $request->attributes->get('trace_id');
+        $totalStart = hrtime(true);
+
+
+        // ======================
+        // SPAN 1: CACHE / DB FETCH
+        // ======================
+        $t1 = hrtime(true);
+
         $products = Cache::store('redis')->remember(
             'top_products',
             300,
-            function () {
-                Log::info('DATABASE QUERY EXECUTED');
-                return Product::orderByDesc('order_counter')
+            function () use ($traceId) {
+
+                $dbStart = hrtime(true);
+
+                $result = Product::orderByDesc('order_counter')
                     ->take(3)
                     ->get()
                     ->toArray();
+
+                $dbTime = (hrtime(true) - $dbStart) / 1e6;
+
+                Log::info("DB QUERY EXECUTED", [
+                    'trace_id' => $traceId,
+                    'ms' => $dbTime
+                ]);
+
+                return $result;
             }
         );
-        return response()->json(['products' => $products], 200);
+
+        $this->logSpan($traceId, "cache_or_db_fetch", $t1);
+
+        // ======================
+        // SPAN 2: RESPONSE BUILD
+        // ======================
+        $t2 = hrtime(true);
+
+        $response = response()->json([
+            'products' => $products
+        ]);
+
+        $this->logSpan($traceId, "response_build", $t2);
+
+        // ======================
+        // TOTAL
+        // ======================
+        $total = (hrtime(true) - $totalStart) / 1e6;
+
+
+        return $response;
     }
-    public function topProductsbefor()
+
+    public function topProductsBefore(Request $request)
     {
-        Log::info('DATABASE QUERY EXECUTED');
+        $traceId = $request->attributes->get('trace_id');
+
+
+        $spans = [];
+        $totalStart = hrtime(true);
+
+        // ======================
+        // SPAN 1: DB QUERY (NO CACHE)
+        // ======================
+        $t1 = hrtime(true);
+
         $products = Product::orderByDesc('order_counter')
             ->take(3)
             ->get()
             ->toArray();
-        return response()->json(['products' => $products], 200);
+         sleep(1);
+        $this->logSpan($traceId, "db_query", $t1);
+
+        // ======================
+        // SPAN 2: RESPONSE BUILD
+        // ======================
+        $t2 = hrtime(true);
+
+        $response = response()->json([
+            'products' => $products
+        ]);
+
+        $this->logSpan($traceId, "response_build", $t2);
+
+        // ======================
+        // TOTAL
+        // ======================
+        $total = (hrtime(true) - $totalStart) / 1e6;
+
+        return $response;
     }
 }

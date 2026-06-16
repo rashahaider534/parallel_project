@@ -18,21 +18,25 @@ class ProductSeeder extends Seeder
                 [
                     'name'=>'dress',
                     'quantity'=>20,
+                    'order_counter' =>10,
                     'price'=>500,
                 ],
                 [
                     'name'=>'pants',
                     'quantity'=>40,
+                    'order_counter' =>1,
                     'price'=>1000,
                 ],
                 [
                     'name'=>'skirt',
                     'quantity'=>70,
+                    'order_counter' =>20,
                     'price'=>1500,
                 ],
                 [
                     'name'=>'T-shert',
                     'quantity'=>10,
+                    'order_counter' =>30,
                     'price'=>350,
 
                 ],
@@ -41,12 +45,14 @@ class ProductSeeder extends Seeder
                 [
                     'name'=>'Hamburger',
                     'quantity'=>67,
+                    'order_counter' =>6,
                     'price'=>1050,
 
                 ],
                 [
                     'name'=>'Pizza',
                     'quantity'=>20,
+                    'order_counter' =>3,
                     'price'=>550,
 
                 ],
