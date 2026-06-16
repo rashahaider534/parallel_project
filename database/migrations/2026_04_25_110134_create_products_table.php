@@ -15,6 +15,7 @@ return new class extends Migration
              $table->id();
             $table->string('name');
             $table->integer('quantity');
+             $table->integer('order_counter')->default(0);
             $table->integer('price');
             $table->string('discription')->nullable();
          $table->integer('version')->default(0);

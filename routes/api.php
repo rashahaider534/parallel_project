@@ -6,16 +6,25 @@ use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ShopController;
-
+use App\Http\Controllers\ReportController;
+use App\Http\Controllers\OrderController;
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
+Route::get('/simulate-lb', [ProductController::class, 'simulateLoadBalancer']);
+Route::get('/top-products', [ProductController::class, 'topProducts']);
+Route::get('/top-products-before', [ProductController::class, 'topProductsbefor']);
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
 
+    Route::get('/report/before', [ReportController::class, 'before']);
+    Route::get('/report/run', [ReportController::class, 'run']);
+    Route::get('/report/after', [ReportController::class, 'after']);
+
     Route::get('/user', function (Request $request) {
         return $request->user();
     });
+
     Route::post('/addproduct', [ProductController::class, 'addproduct']);
     Route::delete('/removeproduct/{product_id}', [ProductController::class, 'removeproduct']);
     Route::post('/update', [ProductController::class, 'update']);
@@ -23,4 +32,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/storebefore', [CartController::class, 'storebefore']);
     Route::post('/storeafter', [CartController::class, 'storeafter']);
     Route::post('/storeOptimistic', [CartController::class, 'storeOptimistic']);
+    Route::post('/storeDistributed', [CartController::class, 'storeDistributed']);
+    Route::post('/store_order_before', [OrderController::class, 'store_order_before']);
+    Route::post('/store_order_after', [OrderController::class, 'store_order_after']);
 });
